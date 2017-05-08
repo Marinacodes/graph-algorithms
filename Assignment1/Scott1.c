@@ -2,16 +2,16 @@
 #include <stdlib.h> 
 
 // Maximum number of vertices
-// If not big enough, print error that it should be increased and recompiled
 #define NMAX 100
 #define DEBUG 0
 
 int numVertices;
 int degrees[NMAX];
 int adjList[NMAX][NMAX];
+int adjMatrix[NMAX][NMAX];
 int sizeOfDomSet;
 int domSet[NMAX];
-int graphNum = 1;
+int graphNum = 0;
 int verbosity;
 
 //int read_graph(int *numVertices, int degrees [NMAX], int adjList [NMAX][NMAX]);
@@ -20,15 +20,31 @@ void check_graph_validity();
 
 int main (int argc, char *argv[])
 {
-	// Task #1 - read input from in.txt
-    
+	
+	// Print error message if incorrect usage
+	if (argc != 2)
+	{
+		printf("Must specify verbosity level (0 for terse, 1 for verbose)\nExample: a.out 0 < in.txt > out.txt\n");	
+		exit(EXIT_FAILURE);
+	}
+
 	verbosity = atoi(argv[1]);
 
 	// As long as end of file is not reached, do
 	while (fscanf(stdin, "%d", &numVertices) == 1) 
 	{
 		int i, j;
-				
+
+		// Print error message if incorrect number of vertices
+		if (numVertices < 1 || numVertices > 100)
+		{
+			printf("The number of vertices in a graph must be greater than 0 and less than 100\nAdjust accordingly and recompile\n");	
+			exit(EXIT_FAILURE);
+		}
+
+		// Increment the number of graph
+		graphNum++;	
+			
 		// For each vertex
 		for (i = 0; i < numVertices; i++)
 		{
@@ -51,11 +67,9 @@ int main (int argc, char *argv[])
 		{
 			scanf("%d", &domSet[i]);	
 		}
-		
-		check_graph_validity();
-		
+
 		#if DEBUG
-			printf("\nThis is graph # %d \n", graphNum);
+			printf("This is graph # %d \n", graphNum);
 			printf("numVertices is %d \n", numVertices);
 			printf("Printing degrees[]\n");
 			for (i = 0; i < numVertices; i++)
@@ -78,66 +92,90 @@ int main (int argc, char *argv[])
 				printf("%d ", domSet[i]);
 			}
 			printf("\n");
-		#endif
+			printf("Printing adjacency matrix\n");
+			for(i = 0; i < numVertices; i++) 
+			{
+  				for(j = 0; j < numVertices; j++) 
+				{
+  					printf("%d ", adjMatrix[i][j]);
+				}
+   				printf("\n");
+			}
+		#endif	
 
-		// Increment the number of graph
-		graphNum++;
-		
+		check_graph_validity();		
 	}
 
-	// Task #2 - process
-
-	// Compose main algorithm here
-	
-
-	// Task #3 - output to out.txt
-	
-	// Check verbosity level
-	// printf("verbosity is %s \n", argv[1]);
-	// int verbosity = argv[1];
-	
-	// If verbosity level is 0
-	// if (verbosity == 0)
-		// Print the graph number
-		// If graph is illegal, print -1
-		// Else if given set is not dominating set, print 0
-		// Else (if given set is dominating set), print 1
-	
-	// If verbosity level is 1
-	// if (verbosity == 1)
-		// Print the graph number
-		// Print graph
-		// If the proposed dominating set is valid
-			// Print the proposed dominating set
-			// Print graph number followed by OK
-		// If the graph is invalid
-			// Print an error message explaining why the graph is invalid
-			// Print graph number followed by BAD GRAPH
-			// Abort program
-		// If the certificate is invalid
-			// Print the proposed dominating set
-			// Print error message, explaining why certificate is invalid
-			// Print graph number followed by BAD CERTIFICATE
 	return 0;
 }
 
 void check_graph_validity() 
 {
-	int i;
+	// Check the validity of range in proposed dominating set
+	int i, j;
 	for (i = 0; i < sizeOfDomSet; i++)
 	{
 		if (domSet[i] < 0 || domSet[i] > numVertices - 1)
 		{
 			if (verbosity == 0)
 			{
-				printf("%d \t %d \n", graphNum, 0);
+				printf("%d    %d \n", graphNum, 0);
 			}
 			if (verbosity == 1)
 			{
-				printf("Error- Value %d in the certificate is not in the range [%d, \t %d] \n", domSet[i], 0, numVertices - 1);
+				printf("Error- Value %d in the certificate is not in the range [%d, \t %d]\n", domSet[i], 0, numVertices - 1);
 				printf("Graph \t %d : BAD CERTIFICATE \n", graphNum);
 				printf("============================= \n");
 			}
 		}
 	}
+	
+	// Initialize adjacency matrix
+	for (i = 0; i < numVertices; i++)
+	{
+		for (j = 0; j < numVertices; j++)
+		{
+			adjMatrix[i][j] = 0;
+		}
+	}	
+	
+	// Create adjacency matrix from adjacency list
+	for (i = 0; i < numVertices; i++)
+	{
+		for (j = 0; j < numVertices; j++)
+		{
+			if (i == j)
+			{
+				adjMatrix[i][j] = 1;
+			}	
+			// This is hacky and needs to be fixed
+			if (adjList[i][j] != NMAX && j < degrees[i]) 
+			{
+				adjMatrix[i][adjList[i][j]] = 1;			
+			}
+		}
+	}	
+	
+	// Check matrix for symmetry
+	for (i = 0; i < numVertices; i++)
+	{
+		for (j = 0; j < numVertices; j++)
+		{
+			if (adjMatrix[i][j] != adjMatrix[j][i])
+			{
+				if (verbosity == 0)
+				{
+					printf("%d   %d \n", graphNum, -1);
+					exit(EXIT_FAILURE);
+				}
+				if (verbosity == 1)
+				{
+					printf("*** Error- adjacency matrix is not symmetric: A[ %d][ %d] = %d, A[ %d][ %d] = %d\n", 
+						i, j, adjMatrix[i][j], j, i, adjMatrix[j][i]);
+					printf("Graph \t %d : BAD GRAPH \n", graphNum);
+					exit(EXIT_FAILURE);
+				}
+			}				
+		}
+	} 
 }
