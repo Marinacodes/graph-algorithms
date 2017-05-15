@@ -18,6 +18,12 @@ int verbosity;
 
 void check_graph_validity();
 
+void check_dominating_set();
+
+void print_graph();
+
+void print_proposed_dominating_set();
+
 int main (int argc, char *argv[])
 {
 	
@@ -68,6 +74,13 @@ int main (int argc, char *argv[])
 			scanf("%d", &domSet[i]);	
 		}
 
+		if (verbosity == 1)
+		{
+			print_graph();
+		}
+
+		check_graph_validity();	
+
 		#if DEBUG
 			printf("This is graph # %d \n", graphNum);
 			printf("numVertices is %d \n", numVertices);
@@ -101,30 +114,127 @@ int main (int argc, char *argv[])
 				}
    				printf("\n");
 			}
-		#endif	
-
-		check_graph_validity();		
+		#endif		
 	}
 
 	return 0;
+}
+
+void print_graph()
+{
+	int i, j;
+	printf("Graph \t%d:\n", graphNum);
+	for (i = 0; i < numVertices; i++)
+	{
+		printf("  %d( %d):", i, (degrees[i]));
+		for(j = 0; j < degrees[i]; j++) 
+		{
+	       		printf("   %d", adjList[i][j]);
+	  	}
+		printf("\n");
+	}	
+}
+
+void print_proposed_dominating_set()
+{
+	int i;
+	printf("Proposed dominating set:\n");
+	for (i = 0; i < sizeOfDomSet; i++)
+	{
+		printf("  %d ", domSet[i]);
+	}
+	printf("\n");
+}
+
+void check_dominating_set()
+{
+	int i,j, err;
+	int dominatedVertices[numVertices];
+
+	// Initialize dominatedVertices[]	
+	for (i = 0; i < numVertices; i++)
+	{
+		dominatedVertices[i] = 0;
+	}
+
+	for (i = 0; i < sizeOfDomSet; i++)
+	{
+		dominatedVertices[domSet[i]] = 1;
+	}
+	
+	for (i = 0; i < sizeOfDomSet; i++)
+	{
+		for (j = 0; j < numVertices; j++)
+		{
+			if (adjMatrix[domSet[i]][j] == 1)
+			{
+				dominatedVertices[j] = 1;
+			}		
+		}
+	}
+
+	for (i = 0; i < numVertices; i++)
+	{
+		if (dominatedVertices[i] != 1)
+		{
+			err = 1;
+			break;
+		}
+		else
+		{
+			err = 0;	
+		}			
+	}
+	if (err == 1)
+	{
+		if (verbosity == 0)
+		{
+			printf("    %d  %d\n", graphNum, 0);
+		}
+		else if (verbosity == 1)
+		{
+			print_proposed_dominating_set();
+			printf("Error- Vertex   %d is not dominated\n", i);
+			printf("Graph     %d: BAD CERTIFICATE\n", graphNum);
+			printf("=============================\n");
+		}
+		}
+	else if (err == 0)
+	{
+		if (verbosity == 0)	
+		{
+			printf("    %d  %d\n", graphNum, 1);	
+		}
+		else if (verbosity == 1)
+		{
+			print_proposed_dominating_set();
+			printf("Graph     %d: OK\n", graphNum);
+			printf("=============================\n");
+		}				
+	}
+	//for (i = 0; i < numVertices; i++)
+		//printf("%d ", dominatedVertices[i]);
 }
 
 void check_graph_validity() 
 {
 	// Check the validity of range in proposed dominating set
 	int i, j;
+	int err = 0;
 	for (i = 0; i < sizeOfDomSet; i++)
 	{
 		if (domSet[i] < 0 || domSet[i] > numVertices - 1)
 		{
+			err = 1;
 			if (verbosity == 0)
 			{
-				printf("%d    %d \n", graphNum, 0);
+				printf("    %d  %d\n", graphNum, 0);
 			}
 			if (verbosity == 1)
 			{
-				printf("Error- Value %d in the certificate is not in the range [%d, \t %d]\n", domSet[i], 0, numVertices - 1);
-				printf("Graph \t %d : BAD CERTIFICATE \n", graphNum);
+				print_proposed_dominating_set();
+				printf("Error- Value  %d in the certificate is not in the range [%d,   %d]\n", domSet[i], 0, numVertices - 1);
+				printf("Graph     %d: BAD CERTIFICATE \n", graphNum);
 				printf("============================= \n");
 			}
 		}
@@ -163,19 +273,24 @@ void check_graph_validity()
 		{
 			if (adjMatrix[i][j] != adjMatrix[j][i])
 			{
+				err = 1;
 				if (verbosity == 0)
 				{
-					printf("%d   %d \n", graphNum, -1);
+					printf("    %d %d\n", graphNum, -1);
 					exit(EXIT_FAILURE);
 				}
 				if (verbosity == 1)
 				{
 					printf("*** Error- adjacency matrix is not symmetric: A[ %d][ %d] = %d, A[ %d][ %d] = %d\n", 
 						i, j, adjMatrix[i][j], j, i, adjMatrix[j][i]);
-					printf("Graph \t %d : BAD GRAPH \n", graphNum);
+					printf("Graph     %d: BAD GRAPH \n", graphNum);
 					exit(EXIT_FAILURE);
 				}
 			}				
 		}
 	} 
+	if (err != 1)
+	{
+		check_dominating_set();
+	}
 }
