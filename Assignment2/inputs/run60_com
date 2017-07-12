@@ -1,0 +1,11 @@
+limit cputime 60
+dom 0 < in_test.txt > otest_60.txt 
+dom 0 < in_all.txt > oall_60.txt
+dom 0 < in_c80.txt > oc80_60.txt
+dom 0 < in_cages.txt > ocages_60.txt
+dom 0 < in_cross.txt > ocross_60.txt
+dom 0 < in_cyc_cyc.txt > ocyc_cyc_60.txt
+dom 0 < in_football_1.txt > ofootball_1_60.txt
+dom 0 < in_hypercube_1.txt > ohypercube_1_60.txt
+dom 0 < in_triang_grid.txt > otriang_grid_60.txt
+dom 0 < in_venn.txt > ovenn_60.txt
