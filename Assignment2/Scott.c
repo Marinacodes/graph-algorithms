@@ -5,12 +5,14 @@
 #define NMAX 2187
 // maximum degree
 #define DEG_MAX 16
-#define DEBUG 0
+#define DEBUG 1
 
 int read_graph(int *n, int degree[NMAX], int G[NMAX][DEG_MAX]); 
 void print_graph(int n, int degree[NMAX], int G[NMAX][DEG_MAX], int graph_num);
 void min_dom_set(int level, int n, int degree[NMAX], int G[NMAX][DEG_MAX], int n_dominated, int num_dominated[NMAX],
 				int num_choice[NMAX], int size, int dom[NMAX], int min_size, int min_dom[NMAX]);
+void print_vector(int size, int arr[]);
+void print_min_dom_set(int size, int n, int dom[]);
 
 int main(int argc, char *argv[])
 {
@@ -45,8 +47,10 @@ int main(int argc, char *argv[])
 		if (verbose == 1)
 		{
 			print_graph(n, degree, G, graph_num);
-            // print dominating set, don't forget fflush(stdout);
-			// min_dom_set(0);
+			// find minimum dominating set
+			min_dom_set(0, n, degree, G, n_dominated, num_dominated, num_choice, size, dom, min_size, min_dom);
+			// print dominating set, don't forget fflush(stdout);
+			//print_min_dom_set(min_size, n, min_dom);
 		}
         else
         {
@@ -95,25 +99,25 @@ int read_graph(int *n, int degree[NMAX], int G[NMAX][DEG_MAX])
 			}
 		}
         return EXIT_SUCCESS;
-#if DEBUG
-		printf("This is graph # %d \n", graph_num);
-		printf("Number of vertices is %d \n", n);
-		printf("Printing degree[]\n");
-		for (i = 0; i < n; i++)
-		{
-			printf("%d ", degree[i]);
-		}
+// #if DEBUG
+// 		printf("This is graph # %d \n", graph_num);
+// 		printf("Number of vertices is %d \n", n);
+// 		printf("Printing degree[]\n");
+// 		for (i = 0; i < n; i++)
+// 		{
+// 			printf("%d ", degree[i]);
+// 		}
 
-		printf("Printing adjacency list[][]\n");
-		for (i = 0; i < n; i++)
-		{
-			for (j = 0; j < n; j++)
-			{
-				printf("%d ", G[i][j]);
-			}
-			printf("\n");
-		}
-#endif
+// 		printf("Printing adjacency list[][]\n");
+// 		for (i = 0; i < n; i++)
+// 		{
+// 			for (j = 0; j < n; j++)
+// 			{
+// 				printf("%d ", G[i][j]);
+// 			}
+// 			printf("\n");
+// 		}
+// #endif
 	}
     return EXIT_FAILURE;
 }
@@ -141,18 +145,21 @@ void print_graph(int n, int degree[NMAX], int G[NMAX][DEG_MAX], int graph_num)
 void min_dom_set(int level, int n, int degree[NMAX], int G[NMAX][DEG_MAX], int n_dominated, int num_dominated[NMAX],
 				int num_choice[NMAX], int size, int dom[NMAX], int min_size, int min_dom[NMAX])
 {
-
 #if DEBUG
-	printf("Level %3d: ", level);
+	printf("\nLevel %3d: \n", level);
+	printf("Current dominating set:\n");
 	print_vector(size, dom);
+	printf("Minimum dominating set:\n");
+	print_vector(min_size, min_dom);
 	printf("Number of vertices dominated: %3d\n", n_dominated);
 	printf("Number of choices per vertex:\n");
 	print_vector(n, num_choice);
 	printf("Number of times dominated:\n");
 	print_vector(n, num_dominated);
+	printf("Size is: %d, min_size is: %d\n", size, min_size);
 #endif
 
-	int i;
+	int i, j;
 	// initialize data structures
 	if (level == 0)
 	{
@@ -165,6 +172,7 @@ void min_dom_set(int level, int n, int degree[NMAX], int G[NMAX][DEG_MAX], int n
 			num_choice[i] = degree[i] + 1;
 			num_dominated[i] = 0;
 			min_dom[i] = i;
+			G[i][degree[i]] = i;
 		}
 	}
 
@@ -178,7 +186,18 @@ void min_dom_set(int level, int n, int degree[NMAX], int G[NMAX][DEG_MAX], int n
 	}
 
 	int u = n - n_dominated; // number of undominated vertices
-	int n_extra = (u + DEG_MAX - 1)/DEG_MAX;
+	int delta = degree[0]; // maximum degree of a vertex
+
+	for (i = 0; i < n; i++)
+	{
+		if (degree[i] > delta)
+		{
+			delta = degree[i];
+		}
+	}
+
+	int n_extra = (u + delta - 1)/delta;
+	
 	if (size + n_extra >= min_size)
 	{
 		return;
@@ -188,17 +207,64 @@ void min_dom_set(int level, int n, int degree[NMAX], int G[NMAX][DEG_MAX], int n
 	{
 		if (size < min_size)
 		{
-			for (i = 0; i < size; i++)
+			for (i = 0; i < min_size; i++)
 			{
 				min_dom[i] = dom[i];
 			}
 			min_size = size;
+			printf("size is %d\n", size);
+			printf("min_size is %d\n", min_size);
 		}
 		return;
 	}
 
+	// exhaustive backtrack
+	u = level;
+	// try colouring a vertex blue
+	for (i = 0; i <= degree[u]; i++)
+	{
+		num_choice[G[u][i]]--;
+	}
+
 	// recursive call
-	// min_dom_set(level + 1);
+	min_dom_set(level + 1, n, degree, G, n_dominated, num_dominated, num_choice, size, dom, min_size, min_dom);
+
+	// undo colouring a vertex blue
+	for (i = 0; i <= degree[u]; i++)
+	{
+		num_choice[G[u][i]]++;
+	}
+
+	// try colouring a vertex red
+	dom[u] = 1;
+	size++;
+	for (i = 0; i <= degree[u]; i++)
+	{
+		num_dominated[G[u][i]]++;
+		n_dominated++;
+	}
+	printf("n_dominated after colouring a vertex red %d\n", n_dominated);
+	
+	// recursive call
+	min_dom_set(level + 1, n, degree, G, n_dominated, num_dominated, num_choice, size, dom, min_size, min_dom);
+
+	// undo colouring a vertex red
+	dom[u] = 0;
+	size--;
+	
+	for (i = 0; i <= degree[u]; i++)
+	{
+		num_dominated[G[u][i]]--;
+		n_dominated--;	
+	}
+
+	printf("n_dominated after undoing colouring a vertex red %d\n", n_dominated);
+	printf("function min_dom_set is done\n");
+	printf("Minimum dominating set:\n");
+	print_vector(min_size, min_dom);
+	printf("min_size is %d\n", min_size);
+	print_min_dom_set(min_size, n, min_dom);
+	exit(EXIT_SUCCESS);
 }
 
 void print_vector(int size, int arr[])
@@ -206,6 +272,21 @@ void print_vector(int size, int arr[])
 	int i;
 	for (i = 0; i < size; i++)
 	{
-		printf("%d ", arr[i]);
+		printf("value %d at index %d\n", arr[i], i);
 	}
+	printf("\n");
+}
+
+void print_min_dom_set(int size, int n, int dom[])
+{
+	printf("Dominating set size is %d\n", size);
+	printf("Dominatng set is:\n");
+    int i;
+    for(i = 0; i < n; i++) {
+        if(dom[i] == 1) {
+            printf("%d ", i);
+        }
+    }
+
+    printf("\n");
 }
