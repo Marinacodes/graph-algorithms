@@ -12,7 +12,7 @@ void print_graph(int n, int degree[NMAX], int G[NMAX][DEG_MAX], int graph_num);
 void min_dom_set(int level, int* n, int degree[NMAX], int G[NMAX][DEG_MAX], int* n_dominated, int num_dominated[NMAX],
 				int num_choice[NMAX], int* size, int dom[NMAX], int* min_size, int min_dom[NMAX]);
 void print_vector(int* size, int arr[]);
-void print_verbose_min_dom_set(int size, int n, int dom[]);
+void print_verbose_min_dom_set(int* min_size, int n, int min_dom[]);
 void print_nonverbose_min_dom_set(int graph_num, int n, int* min_size);
 
 int main(int argc, char *argv[])
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 			// find minimum dominating set
 			min_dom_set(0, &n, degree, G, &n_dominated, num_dominated, num_choice, &size, dom, &min_size, min_dom);
 			// print dominating set, don't forget fflush(stdout);
-			print_verbose_min_dom_set(min_size, n, min_dom);
+			print_verbose_min_dom_set(&min_size, n, min_dom);
 		}
         else
         {
@@ -132,11 +132,13 @@ void print_graph(int n, int degree[NMAX], int G[NMAX][DEG_MAX], int graph_num)
 {
 	int i, j;
 
-	printf("Graph \t%d:\n", graph_num);
+	//printf("Graph \t%d:\n", graph_num);
 	
+	printf("%d\n", n);
+
 	for (i = 0; i < n; i++)
 	{
-		printf("  %d( %d):", i, (degree[i]));
+		//printf("  %d( %d):", i, (degree[i]));
 		for (j = 0; j < degree[i]; j++)
 		{
 			printf("   %d", G[i][j]);
@@ -223,7 +225,7 @@ void min_dom_set(int level, int* n, int degree[NMAX], int G[NMAX][DEG_MAX], int*
 	{
 		if (*size < *min_size)
 		{
-			for (i = 0; i < *min_size; i++)
+			for (i = 0; i < *n; i++)
 			{
 				min_dom[i] = dom[i];
 			}
@@ -324,18 +326,19 @@ void print_vector(int* size, int arr[])
 	printf("\n");
 }
 
-void print_verbose_min_dom_set(int size, int n, int dom[])
+void print_verbose_min_dom_set(int* min_size, int n, int min_dom[])
 {
-	printf("Dominating set size is %d\n", size);
-	printf("Dominating set is:\n");
+	printf("%d\n", *min_size);
+
     int i;
     for(i = 0; i < n; i++) {
-        if(dom[i] == 1) {
+        if(min_dom[i] == 1) {
             printf("%d ", i);
         }
     }
 
-    printf("\n");
+    printf("\n\n");
+	fflush(stdout);
 }
 
 void print_nonverbose_min_dom_set(int graph_num, int n, int* min_size)
