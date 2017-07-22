@@ -123,8 +123,9 @@ void print_graph(int n, int degree[NMAX], int G[NMAX][DEG_MAX])
 
 	for (i = 0; i < n; i++)
 	{
+		printf("%d ", degree[i]);
 		for (j = 0; j < degree[i]; j++)
-		{
+		{			
 			printf("%d ", G[i][j]);
 		}
 		printf("\n");
